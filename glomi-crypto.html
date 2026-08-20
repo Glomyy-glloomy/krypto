@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlomiCrypto</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;cursor:none!important}
+:root{--w:#f5f5f5;--w2:#e0e0e0;--w3:#c0c0c0;--b:#0a0a0a;--b2:#111;--b3:#1a1a1a;--b4:#222;--b5:#2a2a2a;--acc:#fff;--font:'Space Grotesk',sans-serif;--mono:'Space Mono',monospace}
+html{scroll-behavior:smooth}
+body{font-family:var(--font);background:var(--b);color:var(--w);min-height:100vh;overflow-x:hidden}
+
+/* CURSOR */
+#cur{position:fixed;width:24px;height:24px;border:1.5px solid var(--w);border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%);transition:width .15s,height .15s,background .15s}
+#cur2{position:fixed;width:4px;height:4px;background:var(--w);border-radius:50%;pointer-events:none;z-index:99999;transform:translate(-50%,-50%)}
+body.hovering #cur{width:40px;height:40px;background:rgba(255,255,255,.08)}
+
+/* NOISE TEXTURE */
+body::before{content:'';position:fixed;inset:0;opacity:.03;pointer-events:none;z-index:9998;
+background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")}
+
+/* SCANLINES */
+body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,.03) 2px,rgba(0,0,0,.03) 4px);pointer-events:none;z-index:9997}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:500;background:rgba(10,10,10,.92);backdrop-filter:blur(20px);border-bottom:1px solid var(--b5);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:58px}
+.logo{font-family:var(--mono);font-size:1.1rem;font-weight:700;letter-spacing:-.5px;display:flex;align-items:center;gap:.5rem}
+.logo-dot{width:8px;height:8px;background:var(--w);border-radius:50%;animation:ldot 2s ease-in-out infinite}
+@keyframes ldot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.2;transform:scale(.6)}}
+.nav-links{display:flex;gap:.25rem}
+.nb{background:none;border:none;color:#666;padding:.4rem 1rem;border-radius:6px;font-size:.82rem;font-family:var(--font);letter-spacing:.02em;transition:color .2s,background .2s;text-transform:uppercase}
+.nb:hover,.nb.on{color:var(--w);background:var(--b4)}
+.nav-r{display:flex;align-items:center;gap:.75rem}
+.btn-login{background:var(--w);color:var(--b);border:none;padding:.42rem 1.2rem;border-radius:6px;font-family:var(--font);font-size:.82rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;transition:opacity .2s,transform .15s}
+.btn-login:hover{opacity:.88;transform:translateY(-1px)}
+.uchip{display:flex;align-items:center;gap:.5rem;background:var(--b3);border:1px solid var(--b5);border-radius:6px;padding:.35rem .85rem;font-size:.8rem;transition:border .2s}
+.uchip:hover{border-color:#555}
+.uav{width:24px;height:24px;border-radius:50%;background:var(--w);display:flex;align-items:center;justify-content:center;font-size:.64rem;font-weight:700;color:var(--b)}
+
+/* TICKER */
+.ticker{background:var(--b2);border-bottom:1px solid var(--b4);height:34px;overflow:hidden;z-index:1;position:relative}
+.ticker-inner{display:flex;align-items:center;gap:3rem;animation:tick 90s linear infinite;white-space:nowrap;padding-left:100%;height:100%}
+.tkit{display:flex;align-items:center;gap:.4rem;font-family:var(--mono);font-size:.7rem}
+.tsym{color:#555;font-weight:700}
+.tpr{color:var(--w)}
+.tup{color:#888}.tdn{color:#444}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+
+/* PAGES */
+.pg{display:none;animation:pgIn .3s ease}
+.pg.on{display:block}
+@keyframes pgIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.wrap{max-width:1280px;margin:0 auto;padding:2rem}
+
+/* HERO */
+.hero{padding:5rem 2rem 3rem;border-bottom:1px solid var(--b4);overflow:hidden;position:relative}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;max-width:1280px;margin:0 auto}
+.hero-label{font-family:var(--mono);font-size:.7rem;color:#444;letter-spacing:.15em;text-transform:uppercase;margin-bottom:1.5rem;display:flex;align-items:center;gap:.5rem}
+.hero-label::before{content:'';width:24px;height:1px;background:#444}
+.hero-h{font-size:4.5rem;font-weight:700;line-height:.95;letter-spacing:-3px;margin-bottom:1.5rem}
+.hero-h span{color:#333}
+.hero-sub{color:#555;font-size:1rem;line-height:1.6;max-width:380px;margin-bottom:2rem}
+.hero-cta{display:flex;gap:.75rem}
+.cta-btn{background:var(--w);color:var(--b);border:none;padding:.75rem 1.75rem;border-radius:6px;font-family:var(--font);font-size:.85rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;transition:all .2s;position:relative;overflow:hidden}
+.cta-btn::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,0);transition:background .2s}
+.cta-btn:hover::after{background:rgba(0,0,0,.1)}
+.cta-btn:hover{transform:translateY(-2px)}
+.cta-btn2{background:none;border:1px solid var(--b5);color:#777;padding:.75rem 1.75rem;border-radius:6px;font-family:var(--font);font-size:.85rem;text-transform:uppercase;letter-spacing:.05em;transition:all .2s}
+.cta-btn2:hover{border-color:#555;color:var(--w)}
+.hero-right{position:relative}
+.hero-ticker-card{background:var(--b2);border:1px solid var(--b4);border-radius:12px;padding:1.5rem;animation:cardFloat 4s ease-in-out infinite}
+@keyframes cardFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.htc-title{font-family:var(--mono);font-size:.65rem;color:#444;letter-spacing:.1em;text-transform:uppercase;margin-bottom:1rem;border-bottom:1px solid var(--b4);padding-bottom:.75rem}
+.htc-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--b3)}
+.htc-row:last-child{border:none}
+.htc-name{font-size:.82rem;font-weight:600}
+.htc-price{font-family:var(--mono);font-size:.82rem}
+.htc-ch{font-family:var(--mono);font-size:.72rem}
+.hero-stat-row{display:flex;gap:2rem;margin-top:1.5rem}
+.hstat{border-left:1px solid var(--b4);padding-left:1rem}
+.hstat-n{font-family:var(--mono);font-size:1.4rem;font-weight:700}
+.hstat-l{font-size:.72rem;color:#444;text-transform:uppercase;letter-spacing:.08em;margin-top:.2rem}
+
+/* REC BANNER */
+.rec-bar{background:var(--b2);border:1px solid var(--b4);border-radius:10px;padding:1.1rem 1.4rem;margin-bottom:1.5rem;display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.rec-label{font-family:var(--mono);font-size:.65rem;color:#444;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap}
+.rec-tags{display:flex;gap:.45rem;flex-wrap:wrap}
+.rtag{font-family:var(--mono);font-size:.68rem;padding:.22rem .65rem;border-radius:4px;border:1px solid var(--b5);color:#777;transition:all .2s}
+.rtag:hover{border-color:#555;color:var(--w)}
+.rtag.hot{border-color:#444;color:#aaa}
+.rtag.safe{border-color:#333;color:#666}
+
+/* SEARCH */
+.srow{display:flex;gap:.65rem;margin-bottom:1.4rem;align-items:center;flex-wrap:wrap}
+.swrap{position:relative;flex:1;min-width:180px}
+.sico{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:#444;pointer-events:none}
+.sinp{width:100%;background:var(--b2);border:1px solid var(--b4);color:var(--w);padding:.7rem 1rem .7rem 2.5rem;border-radius:8px;font-size:.85rem;font-family:var(--font);outline:none;transition:border .2s}
+.sinp:focus{border-color:#555}
+.sinp::placeholder{color:#333}
+.fp{background:var(--b2);border:1px solid var(--b4);color:#555;padding:.7rem 1rem;border-radius:8px;font-family:var(--mono);font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;transition:all .2s}
+.fp:hover,.fp.on{border-color:#555;color:var(--w)}
+
+/* TABLE */
+.shd{display:flex;justify-content:space-between;align-items:center;margin-bottom:.85rem}
+.slbl{font-family:var(--mono);font-size:.7rem;color:#444;letter-spacing:.12em;text-transform:uppercase;display:flex;align-items:center;gap:.5rem}
+.ldot2{width:6px;height:6px;border-radius:50%;background:var(--w);animation:ldot 1.5s ease-in-out infinite}
+.updl{font-family:var(--mono);font-size:.65rem;color:#333}
+
+.tbl{width:100%;border-collapse:collapse}
+.tbl thead tr{border-bottom:1px solid var(--b4)}
+.tbl th{text-align:left;padding:.55rem .8rem;font-family:var(--mono);font-size:.62rem;color:#333;text-transform:uppercase;letter-spacing:.08em}
+.tbl tbody tr{border-bottom:1px solid rgba(34,34,34,.6);transition:background .12s}
+.tbl tbody tr:hover{background:var(--b2)}
+.tbl td{padding:.75rem .8rem;vertical-align:middle}
+
+.ainfo{display:flex;align-items:center;gap:.7rem}
+.aico{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.88rem;font-weight:700;flex-shrink:0;border:1px solid var(--b5)}
+.an{font-weight:600;font-size:.86rem}
+.as{color:#444;font-family:var(--mono);font-size:.67rem;margin-top:1px}
+.aprx{font-family:var(--mono);font-weight:700;font-size:.86rem}
+.chb{display:inline-flex;align-items:center;gap:.15rem;padding:.16rem .5rem;border-radius:4px;font-family:var(--mono);font-size:.7rem;font-weight:700}
+.cup{background:rgba(255,255,255,.06);color:#888}
+.cdn{background:rgba(255,255,255,.02);color:#444}
+.capc{font-family:var(--mono);color:#333;font-size:.72rem}
+
+/* SPARKLINE */
+.spark{display:flex;align-items:flex-end;gap:2px;height:26px;width:50px}
+.sb{width:4px;border-radius:1px 1px 0 0}
+
+/* ACTION BTNS */
+.abw{display:flex;gap:.35rem;align-items:center;white-space:nowrap}
+.btr{background:none;border:1px solid var(--b5);color:#444;padding:.25rem .65rem;border-radius:5px;font-size:.7rem;font-family:var(--font);transition:all .18s}
+.btr:hover{border-color:#555;color:var(--w)}
+.btr.on{border-color:#777;color:var(--w)}
+.bbuy{background:var(--w);color:var(--b);border:none;padding:.25rem .75rem;border-radius:5px;font-size:.7rem;font-family:var(--font);font-weight:700;text-transform:uppercase;letter-spacing:.03em;transition:opacity .18s,transform .18s}
+.bbuy:hover{opacity:.85;transform:translateY(-1px)}
+.rbadge{font-family:var(--mono);font-size:.58rem;padding:.08rem .4rem;border-radius:3px;margin-left:.3rem;vertical-align:middle}
+.rhot{background:rgba(255,255,255,.08);color:#888;border:1px solid var(--b5)}
+.rsafe{background:rgba(255,255,255,.04);color:#555;border:1px solid var(--b4)}
+
+/* DETAIL PAGE */
+.dback{display:flex;align-items:center;gap:.4rem;color:#444;font-family:var(--mono);font-size:.7rem;letter-spacing:.08em;text-transform:uppercase;margin-bottom:1.5rem;width:fit-content;transition:color .2s}
+.dback:hover{color:var(--w)}
+.dhdr{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap;margin-bottom:2rem;padding-bottom:2rem;border-bottom:1px solid var(--b4)}
+.di-wrap{display:flex;align-items:center;gap:1rem}
+.dico{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;border:1px solid var(--b5)}
+.dname{font-size:2rem;font-weight:700;letter-spacing:-1px}
+.dsym{font-family:var(--mono);color:#333;font-size:.72rem;margin-top:4px;letter-spacing:.08em}
+.dprice{font-family:var(--mono);font-size:2.2rem;font-weight:700;text-align:right;letter-spacing:-1px}
+.dch{text-align:right;margin-top:.3rem}
+
+.chart-card{background:var(--b2);border:1px solid var(--b4);border-radius:10px;padding:1.25rem;margin-bottom:1.25rem}
+.ct{font-family:var(--mono);font-size:.62rem;color:#333;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.85rem}
+.carea{height:150px}
+.csvg{width:100%;height:100%}
+
+.dgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:1.25rem}
+.dgc{background:var(--b2);border:1px solid var(--b4);border-radius:8px;padding:.9rem 1rem}
+.dgl{font-family:var(--mono);font-size:.62rem;color:#333;text-transform:uppercase;letter-spacing:.08em;margin-bottom:.35rem}
+.dgv{font-family:var(--mono);font-size:1rem;font-weight:700}
+
+.recbox{background:var(--b2);border:1px solid var(--b4);border-radius:8px;padding:1rem 1.2rem;margin-bottom:1.25rem}
+.rectl{font-family:var(--mono);font-size:.65rem;color:#444;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.4rem}
+.recbody{color:#666;font-size:.82rem;line-height:1.55}
+
+/* BUY MODAL (10 sites) */
+.buy-overlay{display:none;position:fixed;inset:0;z-index:2000;background:rgba(0,0,0,.9);backdrop-filter:blur(10px);align-items:center;justify-content:center}
+.buy-overlay.open{display:flex}
+.buy-modal{background:var(--b2);border:1px solid var(--b4);border-radius:14px;width:620px;max-width:96vw;max-height:90vh;overflow:hidden;display:flex;flex-direction:column;animation:mIn .22s ease}
+@keyframes mIn{from{transform:scale(.94) translateY(16px);opacity:0}to{transform:none;opacity:1}}
+.buy-modal-hd{padding:1.5rem;border-bottom:1px solid var(--b4);display:flex;align-items:center;justify-content:space-between}
+.buy-modal-title{font-family:var(--mono);font-size:.85rem;font-weight:700;letter-spacing:.05em}
+.buy-modal-sub{font-family:var(--mono);font-size:.65rem;color:#444;margin-top:.25rem;letter-spacing:.06em;text-transform:uppercase}
+.bmc{background:none;border:none;color:#444;font-size:1.4rem;transition:color .2s}
+.bmc:hover{color:var(--w)}
+.buy-sites{padding:1.25rem;overflow-y:auto;flex:1;display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.bsite{background:var(--b3);border:2px solid var(--b4);border-radius:8px;padding:.9rem 1rem;display:flex;align-items:center;gap:.75rem;transition:all .18s;position:relative}
+.bsite:hover{border-color:#444;background:var(--b4)}
+.bsite.selected{border-color:var(--w)!important;background:var(--b4)}
+.bsite-ico{font-size:1.2rem;flex-shrink:0}
+.bsite-name{font-weight:600;font-size:.83rem}
+.bsite-desc{font-family:var(--mono);font-size:.62rem;color:#444;margin-top:.15rem}
+.bsite-check{position:absolute;top:.6rem;right:.7rem;width:16px;height:16px;border-radius:50%;border:1.5px solid var(--b5);transition:all .2s;display:flex;align-items:center;justify-content:center;font-size:.6rem;color:transparent}
+.bsite.selected .bsite-check{background:var(--w);border-color:var(--w);color:var(--b)}
+.buy-modal-ft{padding:1rem 1.25rem;border-top:1px solid var(--b4);display:flex;gap:.75rem;align-items:center;justify-content:flex-end}
+.buy-cancel{background:none;border:1px solid var(--b5);color:#555;padding:.65rem 1.25rem;border-radius:7px;font-family:var(--font);font-size:.82rem;transition:all .18s}
+.buy-cancel:hover{border-color:#555;color:var(--w)}
+.buy-continue{background:var(--w);color:var(--b);border:none;padding:.65rem 1.75rem;border-radius:7px;font-family:var(--font);font-size:.82rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;transition:all .18s;opacity:.4}
+.buy-continue.active{opacity:1}
+.buy-continue.active:hover{opacity:.88;transform:translateY(-1px)}
+.buy-hint{font-family:var(--mono);font-size:.62rem;color:#333;flex:1}
+
+/* SOCIAL */
+.socrow{display:flex;gap:.5rem;flex-wrap:wrap}
+.socbtn{display:flex;align-items:center;gap:.4rem;background:var(--b2);border:1px solid var(--b4);border-radius:6px;padding:.42rem .85rem;font-family:var(--mono);font-size:.7rem;color:#555;text-decoration:none;transition:all .18s;letter-spacing:.04em}
+.socbtn:hover{border-color:#555;color:var(--w)}
+
+/* WATCHLIST */
+.wlg{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:.8rem}
+.wlc{background:var(--b2);border:1px solid var(--b4);border-radius:10px;padding:1.1rem;transition:all .2s;position:relative;overflow:hidden}
+.wlc::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.015),transparent);pointer-events:none}
+.wlc:hover{border-color:#333;transform:translateY(-2px)}
+.wltp{display:flex;justify-content:space-between;align-items:center;margin-bottom:.65rem}
+.wlpr{font-family:var(--mono);font-size:1.3rem;font-weight:700;margin-bottom:.15rem}
+.wlsym{font-family:var(--mono);color:#333;font-size:.67rem;text-transform:uppercase;letter-spacing:.06em}
+.wlbts{display:flex;gap:.4rem;margin-top:.85rem}
+.wlbts button{flex:1}
+.empty-wl{text-align:center;padding:4rem 2rem;color:#333;grid-column:1/-1}
+.empty-ico{font-size:2rem;margin-bottom:.75rem;display:block;opacity:.3}
+
+/* CONVERTER */
+.ccard{background:var(--b2);border:1px solid var(--b4);border-radius:12px;padding:2rem;max-width:460px}
+.chead{font-family:var(--mono);font-size:.85rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:1.5rem;display:flex;align-items:center;gap:.5rem}
+.cf{margin-bottom:.9rem}
+.cl{font-family:var(--mono);font-size:.62rem;color:#333;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem}
+.cinp{width:100%;background:var(--b3);border:1px solid var(--b4);color:var(--w);padding:.72rem 1rem;border-radius:7px;font-size:.9rem;font-family:var(--mono);outline:none;transition:border .2s}
+.cinp:focus{border-color:#555}
+.csel{width:100%;background:var(--b3);border:1px solid var(--b4);color:var(--w);padding:.72rem 1rem;border-radius:7px;font-family:var(--mono);font-size:.78rem;outline:none}
+.cdiv{text-align:center;color:#333;font-size:1.2rem;margin:.2rem 0;font-family:var(--mono)}
+.cres{background:var(--b3);border:1px solid var(--b4);border-radius:8px;padding:1.1rem;margin-top:1.1rem;text-align:center}
+.cresn{font-family:var(--mono);font-size:1.6rem;font-weight:700}
+.cresl{font-family:var(--mono);font-size:.65rem;color:#333;margin-top:.2rem;letter-spacing:.05em}
+
+/* AUTH MODAL */
+.mov{display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,.88);backdrop-filter:blur(8px);align-items:center;justify-content:center}
+.mov.open{display:flex}
+.mbox{background:var(--b2);border:1px solid var(--b4);border-radius:14px;padding:2.25rem;width:360px;max-width:95vw;animation:mIn .22s ease}
+.mclose{float:right;background:none;border:none;color:#333;font-size:1.3rem;transition:color .2s;margin-top:-.5rem}
+.mclose:hover{color:var(--w)}
+.mtit{font-family:var(--mono);font-size:1.1rem;font-weight:700;letter-spacing:.05em;margin-bottom:.25rem;clear:both}
+.msub{font-family:var(--mono);font-size:.62rem;color:#333;letter-spacing:.06em;margin-bottom:1.75rem;text-transform:uppercase}
+.mlbl{font-family:var(--mono);font-size:.62rem;color:#333;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.35rem}
+.minp{width:100%;background:var(--b3);border:1px solid var(--b4);color:var(--w);padding:.75rem 1rem;border-radius:7px;font-size:.88rem;font-family:var(--mono);outline:none;transition:border .2s;margin-bottom:.85rem}
+.minp:focus{border-color:#555}
+.mbtn{width:100%;background:var(--w);color:var(--b);border:none;padding:.85rem;border-radius:8px;font-size:.85rem;font-weight:700;font-family:var(--font);text-transform:uppercase;letter-spacing:.05em;transition:opacity .2s;margin-top:.2rem}
+.mbtn:hover{opacity:.88}
+.msw{text-align:center;margin-top:.9rem;font-family:var(--mono);font-size:.68rem;color:#333;letter-spacing:.04em}
+.msw a{color:#666;transition:color .2s}
+.msw a:hover{color:var(--w)}
+.merr{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);color:#666;border-radius:6px;padding:.55rem .85rem;font-family:var(--mono);font-size:.7rem;margin-bottom:.7rem;display:none}
+
+/* TOAST */
+.toastwrap{position:fixed;bottom:20px;right:20px;z-index:9000;display:flex;flex-direction:column;gap:.4rem;max-width:280px}
+.titem{background:var(--b2);border:1px solid var(--b4);border-radius:10px;padding:.8rem 1rem;animation:tin .25s ease;box-shadow:0 4px 20px rgba(0,0,0,.6)}
+@keyframes tin{from{transform:translateX(110%);opacity:0}to{transform:none;opacity:1}}
+.ttit{font-weight:600;font-size:.8rem;margin-bottom:.1rem}
+.tbody2{font-family:var(--mono);color:#444;font-size:.68rem}
+.tclose2{float:right;background:none;border:none;color:#333;font-size:.95rem;margin-top:-1px}
+
+/* ANIMATIONS */
+@keyframes slideInLeft{from{opacity:0;transform:translateX(-20px)}to{opacity:1;transform:none}}
+@keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.tbl tbody tr{animation:fadeInUp .25s ease both}
+.tbl tbody tr:nth-child(1){animation-delay:.02s}
+.tbl tbody tr:nth-child(2){animation-delay:.04s}
+.tbl tbody tr:nth-child(3){animation-delay:.06s}
+.tbl tbody tr:nth-child(4){animation-delay:.08s}
+.tbl tbody tr:nth-child(5){animation-delay:.1s}
+.tbl tbody tr:nth-child(n+6){animation-delay:.12s}
+
+/* PRICE FLASH */
+@keyframes flashUp{0%{background:rgba(255,255,255,.08)}100%{background:transparent}}
+@keyframes flashDn{0%{background:rgba(255,255,255,.02)}100%{background:transparent}}
+.flash-up{animation:flashUp .6s ease}
+.flash-dn{animation:flashDn .6s ease}
+
+footer{border-top:1px solid var(--b3);padding:1.5rem 2rem;display:flex;justify-content:space-between;align-items:center;position:relative;z-index:1;margin-top:2rem}
+.flinks{display:flex;gap:1rem}
+.flinks a{font-family:var(--mono);font-size:.65rem;color:#333;text-decoration:none;letter-spacing:.06em;text-transform:uppercase;transition:color .2s}
+.flinks a:hover{color:#666}
+.fcopy{font-family:var(--mono);font-size:.62rem;color:#222;letter-spacing:.05em}
+
+@media(max-width:900px){
+  .hero-grid{grid-template-columns:1fr}
+  .hero-right{display:none}
+  .hero-h{font-size:2.8rem}
+  .tbl th:nth-child(5),.tbl td:nth-child(5),.tbl th:nth-child(6),.tbl td:nth-child(6){display:none}
+  .dgrid{grid-template-columns:1fr 1fr}
+  .nav-links{display:none}
+  .buy-sites{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<div id="cur"></div><div id="cur2"></div>
+
+<nav>
+  <div class="logo"><span class="logo-dot"></span>GLOMI/CRYPTO</div>
+  <div class="nav-links">
+    <button class="nb on" onclick="sp('home',this)">Рынок</button>
+    <button class="nb" onclick="sp('watch',this)">Портфель</button>
+    <button class="nb" onclick="sp('conv',this)">Конвертер</button>
+  </div>
+  <div class="nav-r" id="authArea">
+    <button class="btn-login" onclick="om('login')">Войти</button>
+  </div>
+</nav>
+
+<div class="ticker"><div class="ticker-inner" id="tkEl"></div></div>
+
+<!-- HOME -->
+<div class="pg on" id="pg-home">
+  <div class="hero">
+    <div class="hero-grid">
+      <div>
+        <div class="hero-label">Live Market Data</div>
+        <div class="hero-h">Все<br>рынки.<br><span>Один</span><br>экран.</div>
+        <div class="hero-sub">100+ криптовалют и акций в реальном времени. Отслеживай, анализируй, покупай через проверенные платформы.</div>
+        <div class="hero-cta">
+          <button class="cta-btn" onclick="sp('home')">Смотреть рынок</button>
+          <button class="cta-btn2" onclick="om('register')">Регистрация</button>
+        </div>
+        <div class="hero-stat-row">
+          <div class="hstat"><div class="hstat-n">100+</div><div class="hstat-l">Активов</div></div>
+          <div class="hstat"><div class="hstat-n">1с</div><div class="hstat-l">Обновление</div></div>
+          <div class="hstat"><div class="hstat-n">20+</div><div class="hstat-l">Платформ</div></div>
+        </div>
+      </div>
+      <div class="hero-right">
+        <div class="hero-ticker-card">
+          <div class="htc-title">// LIVE PRICES</div>
+          <div id="htcRows"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div class="rec-bar">
+      <div class="rec-label">// Рекомендации</div>
+      <div class="rec-tags" id="recTags"></div>
+    </div>
+    <div class="srow">
+      <div class="swrap">
+        <svg class="sico" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input class="sinp" id="sInp" placeholder="Bitcoin, ETH, AAPL, NVDA..." oninput="renderTbl()">
+      </div>
+      <button class="fp on" onclick="sf('all',this)">Все</button>
+      <button class="fp" onclick="sf('crypto',this)">Крипто</button>
+      <button class="fp" onclick="sf('stock',this)">Акции</button>
+    </div>
+    <div class="shd">
+      <div class="slbl"><span class="ldot2"></span> Live Market</div>
+      <div class="updl" id="updL">—</div>
+    </div>
+    <table class="tbl">
+      <thead><tr>
+        <th>#</th><th>Актив</th><th>Цена</th><th>24ч</th><th>Капитал.</th><th>График</th><th>Действия</th>
+      </tr></thead>
+      <tbody id="tblBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="pg" id="pg-detail">
+  <div class="wrap">
+    <div class="dback" onclick="sp('home')">← Назад</div>
+    <div class="dhdr">
+      <div class="di-wrap">
+        <div class="dico" id="dIco"></div>
+        <div><div class="dname" id="dName"></div><div class="dsym" id="dSym"></div></div>
+      </div>
+      <div><div class="dprice" id="dPrice"></div><div class="dch" id="dCh"></div></div>
+    </div>
+    <div class="chart-card">
+      <div class="ct">// Price Chart · last 60s simulation</div>
+      <div class="carea"><svg class="csvg" id="chSvg" viewBox="0 0 800 150" preserveAspectRatio="none"></svg></div>
+    </div>
+    <div class="dgrid" id="dGrid"></div>
+    <div class="recbox" id="dRec"></div>
+    <div class="slbl" style="margin-bottom:.75rem">// Где купить</div>
+    <div style="margin-bottom:1.25rem">
+      <button class="cta-btn" onclick="openBuyModal()" id="dBuyBtn">Выбрать платформу и купить</button>
+    </div>
+    <div class="slbl" style="margin-bottom:.65rem;margin-top:1rem">// Соцсети</div>
+    <div class="socrow" id="dSocs"></div>
+  </div>
+</div>
+
+<!-- WATCHLIST -->
+<div class="pg" id="pg-watch">
+  <div class="wrap">
+    <div class="shd" style="margin-top:.5rem">
+      <div class="slbl">// Портфель</div>
+    </div>
+    <div class="wlg" id="wlGrid"></div>
+  </div>
+</div>
+
+<!-- CONVERTER -->
+<div class="pg" id="pg-conv">
+  <div class="wrap">
+    <div class="ccard">
+      <div class="chead">// Конвертер</div>
+      <div class="cf"><div class="cl">Сумма</div><input class="cinp" id="cAmt" type="number" value="1" oninput="doConv()"></div>
+      <div class="cf"><div class="cl">Из</div><select class="csel" id="cFrom" onchange="doConv()"></select></div>
+      <div class="cdiv">↕</div>
+      <div class="cf"><div class="cl">В</div><select class="csel" id="cTo" onchange="doConv()"></select></div>
+      <div class="cres"><div class="cresn" id="cResN">—</div><div class="cresl" id="cResL">Выберите валюты</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- BUY MODAL -->
+<div class="buy-overlay" id="buyOverlay">
+  <div class="buy-modal">
+    <div class="buy-modal-hd">
+      <div>
+        <div class="buy-modal-title" id="buyModalTitle">// Выберите платформу</div>
+        <div class="buy-modal-sub" id="buyModalSub">Топ-10 проверенных платформ</div>
+      </div>
+      <button class="bmc" onclick="closeBuyModal()">×</button>
+    </div>
+    <div class="buy-sites" id="buySitesList"></div>
+    <div class="buy-modal-ft">
+      <div class="buy-hint" id="buyHint">Выберите платформу выше</div>
+      <button class="buy-cancel" onclick="closeBuyModal()">Отмена</button>
+      <button class="buy-continue" id="buyContinueBtn" onclick="doContinue()">Продолжить →</button>
+    </div>
+  </div>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="mov" id="authMod">
+  <div class="mbox">
+    <button class="mclose" onclick="cm()">×</button>
+    <div class="mtit" id="mTit">ВХОД</div>
+    <div class="msub" id="mSub">Войдите в аккаунт</div>
+    <div class="merr" id="mErr"></div>
+    <div id="mFlds"></div>
+    <button class="mbtn" onclick="authDo()">Войти</button>
+    <div class="msw" id="mSw"></div>
+  </div>
+</div>
+
+<div class="toastwrap" id="toastW"></div>
+
+<footer>
+  <div class="flinks">
+    <a href="https://binance.com" target="_blank">Binance</a>
+    <a href="https://coinbase.com" target="_blank">Coinbase</a>
+    <a href="https://okx.com" target="_blank">OKX</a>
+    <a href="https://etoro.com" target="_blank">eToro</a>
+    <a href="https://interactivebrokers.com" target="_blank">IBKR</a>
+    <a href="https://kraken.com" target="_blank">Kraken</a>
+  </div>
+  <div class="fcopy">© 2024 GLOMI/CRYPTO · ДАННЫЕ СИМУЛИРУЮТСЯ</div>
+</footer>
+
+<script>
+// ─── CURSOR ───────────────────────────────────────────────────
+const C=document.getElementById('cur'),C2=document.getElementById('cur2');
+let mx=window.innerWidth/2,my=window.innerHeight/2,cx=mx,cy=my;
+document.addEventListener('mousemove',e=>{mx=e.clientX;my=e.clientY;C2.style.left=mx+'px';C2.style.top=my+'px'});
+(function loop(){cx+=(mx-cx)*.14;cy+=(my-cy)*.14;C.style.left=cx+'px';C.style.top=cy+'px';requestAnimationFrame(loop)})();
+document.addEventListener('mousedown',()=>C.style.transform='translate(-50%,-50%) scale(.65)');
+document.addEventListener('mouseup',()=>C.style.transform='translate(-50%,-50%) scale(1)');
+document.querySelectorAll('button,a,[onclick]').forEach(el=>{
+  el.addEventListener('mouseenter',()=>document.body.classList.add('hovering'));
+  el.addEventListener('mouseleave',()=>document.body.classList.remove('hovering'));
+});
+
+// ─── BUY PLATFORMS ────────────────────────────────────────────
+const CRYPTO_SITES=[
+  {n:'Binance',i:'◈',u:'https://binance.com',d:'Крупнейшая биржа мира, 350+ монет'},
+  {n:'Coinbase',i:'○',u:'https://coinbase.com',d:'Биржа №1 в США, надёжная'},
+  {n:'OKX',i:'◆',u:'https://okx.com',d:'Топ мировая биржа, фьючерсы'},
+  {n:'Bybit',i:'◇',u:'https://bybit.com',d:'Деривативы и спот, быстрая'},
+  {n:'KuCoin',i:'◉',u:'https://kucoin.com',d:'1000+ альткоинов'},
+  {n:'Kraken',i:'▣',u:'https://kraken.com',d:'Надёжная с 2011 года'},
+  {n:'Gate.io',i:'□',u:'https://gate.io',d:'Широкий выбор монет'},
+  {n:'Gemini',i:'△',u:'https://gemini.com',d:'Регулируемая, США'},
+  {n:'Bitfinex',i:'▽',u:'https://bitfinex.com',d:'Профессиональная торговля'},
+  {n:'Huobi / HTX',i:'▲',u:'https://huobi.com',d:'Топ азиатская биржа'},
+];
+const STOCK_SITES=[
+  {n:'Interactive Brokers',i:'◈',u:'https://interactivebrokers.com',d:'Профессиональная, низкие комиссии'},
+  {n:'eToro',i:'○',u:'https://etoro.com',d:'Соцтрейдинг, простой интерфейс'},
+  {n:'Webull',i:'◆',u:'https://webull.com',d:'Без комиссий, аналитика'},
+  {n:'Charles Schwab',i:'◇',u:'https://schwab.com',d:'Надёжный брокер США'},
+  {n:'Fidelity',i:'◉',u:'https://fidelity.com',d:'Без комиссий, исследования'},
+  {n:'TD Ameritrade',i:'▣',u:'https://tdameritrade.com',d:'Мощная платформа, аналитика'},
+  {n:'Robinhood',i:'□',u:'https://robinhood.com',d:'Мобильный, без комиссий'},
+  {n:'Trading 212',i:'△',u:'https://trading212.com',d:'Европейский брокер'},
+  {n:'Saxo Bank',i:'▽',u:'https://home.saxo',d:'Глобальный, широкий выбор'},
+  {n:'Alpaca',i:'▲',u:'https://alpaca.markets',d:'API торговля, без комиссий'},
+];
+
+// ─── ASSETS ───────────────────────────────────────────────────
+const ALL=[
+{id:'BTC',n:'Bitcoin',s:'BTC',t:'crypto',p:67420,ch:2.34,cap:'$1.33T',vol:'$38B',co:'#888',e:'₿',rec:'hot',recT:'Цифровое золото. Лучший актив для долгосрочного хранения, признан институциональными инвесторами.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/bitcoin'},{n:'Reddit',i:'→',u:'https://reddit.com/r/bitcoin'},{n:'YouTube',i:'→',u:'https://youtube.com/results?search_query=bitcoin'}]},
+{id:'ETH',n:'Ethereum',s:'ETH',t:'crypto',p:3512,ch:-1.12,cap:'$422B',vol:'$18B',co:'#777',e:'Ξ',rec:'hot',recT:'Платформа DeFi и NFT. Ключевая инфраструктура Web3, высокая ликвидность.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/ethereum'},{n:'Reddit',i:'→',u:'https://reddit.com/r/ethereum'}]},
+{id:'BNB',n:'BNB',s:'BNB',t:'crypto',p:598,ch:0.87,cap:'$89B',vol:'$2B',co:'#666',e:'B',rec:'safe',recT:'Нативный токен Binance. Стабильный актив с утилитарной ценностью.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/bnbchain'}]},
+{id:'SOL',n:'Solana',s:'SOL',t:'crypto',p:178,ch:4.21,cap:'$82B',vol:'$4B',co:'#777',e:'◎',rec:'hot',recT:'Быстрый Layer-1. Активно растущая экосистема, мем-коины и DeFi.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/solana'},{n:'Reddit',i:'→',u:'https://reddit.com/r/solana'}]},
+{id:'XRP',n:'XRP',s:'XRP',t:'crypto',p:0.62,ch:-0.45,cap:'$35B',vol:'$1.5B',co:'#555',e:'✕',rec:'',recT:'Платёжная сеть для банков. Высокая ликвидность, быстрые транзакции.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/ripple'}]},
+{id:'TON',n:'Toncoin',s:'TON',t:'crypto',p:7.14,ch:3.56,cap:'$18B',vol:'$500M',co:'#666',e:'◇',rec:'hot',recT:'Блокчейн Telegram. Огромная аудитория, мини-приложения, стремительный рост.',soc:[{n:'Telegram',i:'→',u:'https://t.me/toncoin'},{n:'Twitter',i:'→',u:'https://twitter.com/ton_blockchain'}]},
+{id:'ADA',n:'Cardano',s:'ADA',t:'crypto',p:0.51,ch:-2.1,cap:'$18B',vol:'$400M',co:'#555',e:'A',rec:'',recT:'Академически разработанный блокчейн. Надёжный, но медленное развитие.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/cardano'}]},
+{id:'DOGE',n:'Dogecoin',s:'DOGE',t:'crypto',p:0.162,ch:5.44,cap:'$23B',vol:'$1.2B',co:'#666',e:'Ð',rec:'hot',recT:'Мем-коин Илона Маска. Высокая волатильность, огромное сообщество.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/dogecoin'},{n:'Reddit',i:'→',u:'https://reddit.com/r/dogecoin'}]},
+{id:'AVAX',n:'Avalanche',s:'AVAX',t:'crypto',p:38.4,ch:1.87,cap:'$16B',vol:'$600M',co:'#555',e:'▲',rec:'',recT:'Быстрый Layer-1. Много DeFi-проектов, активная экосистема.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/avalancheavax'}]},
+{id:'LINK',n:'Chainlink',s:'LINK',t:'crypto',p:14.2,ch:-0.88,cap:'$8B',vol:'$400M',co:'#666',e:'⬡',rec:'safe',recT:'Оракул-сеть. Критическая инфраструктура DeFi, надёжный актив.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/chainlink'}]},
+{id:'DOT',n:'Polkadot',s:'DOT',t:'crypto',p:7.8,ch:2.1,cap:'$11B',vol:'$350M',co:'#555',e:'●',rec:'',recT:'Мультичейн-протокол. Интероперабельность блокчейнов.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/polkadot'}]},
+{id:'MATIC',n:'Polygon',s:'MATIC',t:'crypto',p:0.89,ch:3.44,cap:'$8.5B',vol:'$500M',co:'#666',e:'M',rec:'',recT:'Layer-2 для Ethereum. Низкие комиссии, широкое применение.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/0xpolygon'}]},
+{id:'UNI',n:'Uniswap',s:'UNI',t:'crypto',p:9.7,ch:-1.2,cap:'$5.8B',vol:'$200M',co:'#555',e:'U',rec:'',recT:'Крупнейший DEX. Токен управления, децентрализованная торговля.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/uniswap'}]},
+{id:'ATOM',n:'Cosmos',s:'ATOM',t:'crypto',p:9.1,ch:0.5,cap:'$3.5B',vol:'$150M',co:'#666',e:'⚛',rec:'',recT:'Интернет блокчейнов. Стейкинг, экосистема IBC.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/cosmos'}]},
+{id:'LTC',n:'Litecoin',s:'LTC',t:'crypto',p:84.5,ch:-0.3,cap:'$6.2B',vol:'$400M',co:'#555',e:'Ł',rec:'safe',recT:'Проверенный временем. Быстрые транзакции, высокая ликвидность.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/litecoin'}]},
+{id:'SUI',n:'Sui',s:'SUI',t:'crypto',p:1.82,ch:6.1,cap:'$4.8B',vol:'$300M',co:'#666',e:'S',rec:'hot',recT:'Новый Layer-1 от команды Meta. Высокая скорость, большой потенциал.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/SuiNetwork'}]},
+{id:'APT',n:'Aptos',s:'APT',t:'crypto',p:9.4,ch:2.8,cap:'$3.9B',vol:'$200M',co:'#555',e:'A',rec:'',recT:'Layer-1 на Move. Альтернатива Solana, быстрая финализация.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/Aptos_Network'}]},
+{id:'INJ',n:'Injective',s:'INJ',t:'crypto',p:28.4,ch:3.1,cap:'$2.6B',vol:'$150M',co:'#666',e:'I',rec:'hot',recT:'DeFi-блокчейн для деривативов. Быстрый рост, уникальная ниша.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/Injective_'}]},
+{id:'ARB',n:'Arbitrum',s:'ARB',t:'crypto',p:1.05,ch:0.9,cap:'$3.3B',vol:'$180M',co:'#555',e:'A',rec:'',recT:'Крупнейший Layer-2. DeFi экосистема, низкие комиссии.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/arbitrum'}]},
+{id:'NEAR',n:'NEAR Protocol',s:'NEAR',t:'crypto',p:6.8,ch:1.4,cap:'$7.2B',vol:'$250M',co:'#666',e:'N',rec:'',recT:'Шардированный блокчейн. User-friendly, активная экосистема.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/nearprotocol'}]},
+{id:'WIF',n:'dogwifhat',s:'WIF',t:'crypto',p:2.8,ch:8.1,cap:'$2.8B',vol:'$300M',co:'#555',e:'W',rec:'hot',recT:'Топ мем-коин Solana. Ажиотажный рост, высокая волатильность.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/dogwifcoin'}]},
+{id:'PEPE',n:'Pepe',s:'PEPE',t:'crypto',p:0.0000112,ch:5.3,cap:'$4.7B',vol:'$800M',co:'#666',e:'P',rec:'hot',recT:'Популярный мем-коин. Огромный объём торгов, культовый статус.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/pepecoineth'}]},
+{id:'RNDR',n:'Render',s:'RNDR',t:'crypto',p:7.8,ch:2.4,cap:'$3B',vol:'$120M',co:'#555',e:'R',rec:'safe',recT:'GPU-рендеринг на блокчейне. AI-нарратив, реальный спрос.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/rendernetwork'}]},
+{id:'FET',n:'Fetch.ai',s:'FET',t:'crypto',p:1.62,ch:3.8,cap:'$1.6B',vol:'$80M',co:'#666',e:'F',rec:'hot',recT:'AI + блокчейн. Актуальный нарратив 2024, партнёрства.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/Fetch_ai'}]},
+{id:'TAO',n:'Bittensor',s:'TAO',t:'crypto',p:418,ch:2.1,cap:'$3.4B',vol:'$60M',co:'#555',e:'τ',rec:'hot',recT:'AI-блокчейн. Децентрализованные нейросети, высокий потенциал.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/opentensor'}]},
+{id:'KAS',n:'Kaspa',s:'KAS',t:'crypto',p:0.118,ch:3.2,cap:'$2.7B',vol:'$80M',co:'#666',e:'K',rec:'hot',recT:'Быстрый PoW-блокчейн нового поколения. Уникальная технология.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/KaspaCurrency'}]},
+{id:'HBAR',n:'Hedera',s:'HBAR',t:'crypto',p:0.085,ch:0.9,cap:'$3.4B',vol:'$80M',co:'#555',e:'H',rec:'safe',recT:'Хэшграф с поддержкой корпораций (Google, IBM). Стабильный.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/hedera'}]},
+{id:'AAVE',n:'Aave',s:'AAVE',t:'crypto',p:92,ch:1.2,cap:'$1.4B',vol:'$100M',co:'#666',e:'A',rec:'safe',recT:'Лидирующий протокол кредитования DeFi. Проверенный временем.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/aaveaave'}]},
+{id:'MKR',n:'Maker',s:'MKR',t:'crypto',p:1580,ch:-0.8,cap:'$1.4B',vol:'$60M',co:'#555',e:'M',rec:'safe',recT:'Протокол стейблкоина DAI. Фундаментальная ценность в DeFi.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/MakerDAO'}]},
+{id:'BCH',n:'Bitcoin Cash',s:'BCH',t:'crypto',p:378,ch:0.8,cap:'$7.4B',vol:'$250M',co:'#666',e:'Ƀ',rec:'safe',recT:'Форк Bitcoin. Быстрые транзакции, высокая ликвидность.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/BitcoinCash'}]},
+{id:'XMR',n:'Monero',s:'XMR',t:'crypto',p:142,ch:-1.1,cap:'$2.6B',vol:'$60M',co:'#555',e:'M',rec:'',recT:'Конфиденциальная криптовалюта. Приватные транзакции.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/monero'}]},
+{id:'ALGO',n:'Algorand',s:'ALGO',t:'crypto',p:0.18,ch:-1.1,cap:'$1.5B',vol:'$50M',co:'#666',e:'A',rec:'safe',recT:'Высокопроизводительный, углеродно нейтральный блокчейн.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/algorand'}]},
+{id:'FIL',n:'Filecoin',s:'FIL',t:'crypto',p:5.8,ch:-1.4,cap:'$3.3B',vol:'$120M',co:'#555',e:'F',rec:'',recT:'Децентрализованное хранилище данных. Реальный утилитарный спрос.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/Filecoin'}]},
+{id:'TIA',n:'Celestia',s:'TIA',t:'crypto',p:8.9,ch:2.7,cap:'$1.8B',vol:'$80M',co:'#666',e:'✦',rec:'hot',recT:'Модульный блокчейн. Новая технология DA, высокий потенциал.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/CelestiaOrg'}]},
+{id:'JUP',n:'Jupiter',s:'JUP',t:'crypto',p:1.05,ch:4.2,cap:'$1.4B',vol:'$120M',co:'#555',e:'J',rec:'hot',recT:'Крупнейший DEX-агрегатор Solana. Доминирует рынок.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/JupiterExchange'}]},
+{id:'OP',n:'Optimism',s:'OP',t:'crypto',p:2.3,ch:-1.5,cap:'$2.4B',vol:'$100M',co:'#666',e:'O',rec:'',recT:'Rollup Layer-2 для Ethereum. Активная экосистема.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/optimismFND'}]},
+{id:'GRT',n:'The Graph',s:'GRT',t:'crypto',p:0.21,ch:2.5,cap:'$2B',vol:'$70M',co:'#555',e:'G',rec:'',recT:'Индексирование данных блокчейна. Инфраструктура Web3.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/graphprotocol'}]},
+{id:'VET',n:'VeChain',s:'VET',t:'crypto',p:0.038,ch:1.5,cap:'$2.7B',vol:'$60M',co:'#666',e:'V',rec:'',recT:'Цепочки поставок на блокчейне. Корпоративные партнёрства.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/vechainofficial'}]},
+{id:'THETA',n:'Theta Network',s:'THETA',t:'crypto',p:1.42,ch:-0.7,cap:'$1.4B',vol:'$30M',co:'#555',e:'θ',rec:'',recT:'Децентрализованная стриминговая сеть.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/Theta_Network'}]},
+{id:'ETC',n:'Ethereum Classic',s:'ETC',t:'crypto',p:26.4,ch:-0.3,cap:'$3.9B',vol:'$150M',co:'#666',e:'⟠',rec:'',recT:'Оригинальный Ethereum. Неизменяемая история.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/eth_classic'}]},
+{id:'STX',n:'Stacks',s:'STX',t:'crypto',p:1.92,ch:1.5,cap:'$2.8B',vol:'$100M',co:'#555',e:'S',rec:'',recT:'Layer-2 для Bitcoin. Смарт-контракты на BTC.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/Stacks'}]},
+{id:'RUNE',n:'THORChain',s:'RUNE',t:'crypto',p:5.2,ch:-0.5,cap:'$1.7B',vol:'$70M',co:'#666',e:'T',rec:'',recT:'Кросс-чейн ликвидность. Нативный кросс-чейн своп.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/THORChain'}]},
+{id:'BONK',n:'Bonk',s:'BONK',t:'crypto',p:0.0000248,ch:6.7,cap:'$1.8B',vol:'$200M',co:'#555',e:'B',rec:'',recT:'Мем-коин Solana. Активное сообщество, высокая волатильность.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/bonk_inu'}]},
+{id:'WLD',n:'Worldcoin',s:'WLD',t:'crypto',p:4.8,ch:-1.2,cap:'$740M',vol:'$100M',co:'#666',e:'W',rec:'',recT:'Проект Сэма Альтмана. Биометрия + криптовалюта.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/worldcoin'}]},
+{id:'SEI',n:'Sei',s:'SEI',t:'crypto',p:0.48,ch:2.1,cap:'$1.1B',vol:'$60M',co:'#555',e:'S',rec:'',recT:'Специализированный блокчейн для DEX.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/SeiNetwork'}]},
+{id:'EGLD',n:'MultiversX',s:'EGLD',t:'crypto',p:38,ch:1.4,cap:'$1.1B',vol:'$40M',co:'#666',e:'E',rec:'',recT:'Шардированный Layer-1 из Европы.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/MultiversX'}]},
+{id:'FLOW',n:'Flow',s:'FLOW',t:'crypto',p:0.69,ch:1.1,cap:'$720M',vol:'$25M',co:'#555',e:'F',rec:'',recT:'Блокчейн для NFT и игр. NBA Top Shot.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/flow_blockchain'}]},
+{id:'ICP',n:'Internet Computer',s:'ICP',t:'crypto',p:12.4,ch:-2.3,cap:'$5.7B',vol:'$100M',co:'#666',e:'∞',rec:'',recT:'Децентрализованный интернет-компьютер Dfinity.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/dfinity'}]},
+{id:'XLM',n:'Stellar',s:'XLM',t:'crypto',p:0.115,ch:0.7,cap:'$3.3B',vol:'$130M',co:'#555',e:'★',rec:'',recT:'Платёжная сеть для банков. Партнёрства с финтехом.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/stellarorg'}]},
+// STOCKS
+{id:'AAPL',n:'Apple',s:'AAPL',t:'stock',p:213.5,ch:0.98,cap:'$3.28T',vol:'$95B',co:'#777',e:'◉',rec:'safe',recT:'Крупнейшая компания мира. Стабильные дивиденды, лояльная аудитория, постоянный рост.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/apple'},{n:'YouTube',i:'→',u:'https://youtube.com/@apple'},{n:'Instagram',i:'→',u:'https://instagram.com/apple'}]},
+{id:'MSFT',n:'Microsoft',s:'MSFT',t:'stock',p:429.1,ch:1.44,cap:'$3.19T',vol:'$28B',co:'#666',e:'◈',rec:'safe',recT:'Лидер облака и AI (ChatGPT/OpenAI). Стабильный рост, дивиденды, диверсификация.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/microsoft'},{n:'YouTube',i:'→',u:'https://youtube.com/@microsoft'},{n:'LinkedIn',i:'→',u:'https://linkedin.com/company/microsoft'}]},
+{id:'NVDA',n:'NVIDIA',s:'NVDA',t:'stock',p:118.4,ch:3.21,cap:'$2.9T',vol:'$58B',co:'#888',e:'◆',rec:'hot',recT:'Главный бенефициар AI-революции. GPU-монополия, экспоненциальный рост прибыли.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/nvidia'},{n:'YouTube',i:'→',u:'https://youtube.com/@nvidia'}]},
+{id:'GOOGL',n:'Alphabet',s:'GOOGL',t:'stock',p:176.8,ch:-0.34,cap:'$2.18T',vol:'$28B',co:'#666',e:'○',rec:'safe',recT:'Google + YouTube + Cloud. Диверсифицированный гигант, реклама + AI + облако.',soc:[{n:'YouTube',i:'→',u:'https://youtube.com/@google'},{n:'Twitter',i:'→',u:'https://twitter.com/google'}]},
+{id:'AMZN',n:'Amazon',s:'AMZN',t:'stock',p:194.2,ch:0.67,cap:'$2.07T',vol:'$46B',co:'#777',e:'◇',rec:'safe',recT:'Лидер e-commerce и AWS. Рост облачных доходов, огромный масштаб.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/amazon'},{n:'YouTube',i:'→',u:'https://youtube.com/@amazon'}]},
+{id:'TSLA',n:'Tesla',s:'TSLA',t:'stock',p:248.9,ch:-1.89,cap:'$793B',vol:'$117B',co:'#555',e:'▽',rec:'hot',recT:'Лидер EV + FSD + роботакси. Высокая волатильность, но огромный потенциал.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/tesla'},{n:'YouTube',i:'→',u:'https://youtube.com/@Tesla'}]},
+{id:'META',n:'Meta',s:'META',t:'stock',p:512.3,ch:2.11,cap:'$1.3T',vol:'$29B',co:'#666',e:'▣',rec:'hot',recT:'Facebook+Instagram+WhatsApp. Сильный AI, реклама растёт, метавселенная.',soc:[{n:'Facebook',i:'→',u:'https://facebook.com'},{n:'Instagram',i:'→',u:'https://instagram.com'},{n:'Twitter',i:'→',u:'https://twitter.com/meta'}]},
+{id:'V',n:'Visa',s:'V',t:'stock',p:276.4,ch:0.22,cap:'$572B',vol:'$7B',co:'#555',e:'□',rec:'safe',recT:'Платёжная инфраструктура. Стабильный бизнес, дивиденды, защита от инфляции.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/visa'},{n:'LinkedIn',i:'→',u:'https://linkedin.com/company/visa'}]},
+{id:'JPM',n:'JPMorgan Chase',s:'JPM',t:'stock',p:198.7,ch:0.44,cap:'$570B',vol:'$14B',co:'#666',e:'△',rec:'safe',recT:'Крупнейший банк США. Дивиденды, стабильный рост, диверсификация.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/jpmorgan'}]},
+{id:'WMT',n:'Walmart',s:'WMT',t:'stock',p:68.4,ch:0.14,cap:'$548B',vol:'$6B',co:'#555',e:'▲',rec:'safe',recT:'Крупнейший ритейлер. Защитная акция, стабильные дивиденды, e-commerce.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/walmart'}]},
+{id:'BABA',n:'Alibaba',s:'BABA',t:'stock',p:82.1,ch:-0.77,cap:'$198B',vol:'$4B',co:'#666',e:'◉',rec:'',recT:'Крупнейший e-commerce Азии. Потенциал роста при нормализации отношений США-Китай.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/alibaba_group'}]},
+{id:'NFLX',n:'Netflix',s:'NFLX',t:'stock',p:628.4,ch:1.56,cap:'$271B',vol:'$5B',co:'#555',e:'◈',rec:'',recT:'Лидер стриминга. Рост на рекламе, борьба с паролями приносит результаты.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/netflix'},{n:'YouTube',i:'→',u:'https://youtube.com/@Netflix'},{n:'Instagram',i:'→',u:'https://instagram.com/netflix'}]},
+{id:'AMD',n:'AMD',s:'AMD',t:'stock',p:158.3,ch:2.3,cap:'$255B',vol:'$13B',co:'#666',e:'◆',rec:'hot',recT:'Конкурент NVIDIA в AI-чипах. Недооценён, растущая доля рынка.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/AMD'},{n:'YouTube',i:'→',u:'https://youtube.com/@AMD'}]},
+{id:'DIS',n:'Disney',s:'DIS',t:'stock',p:98.7,ch:0.5,cap:'$179B',vol:'$4B',co:'#555',e:'○',rec:'',recT:'Медиа-гигант. Disney+ растёт, парки прибыльны, IP-портфель уникален.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/disney'},{n:'YouTube',i:'→',u:'https://youtube.com/@Disney'}]},
+{id:'PYPL',n:'PayPal',s:'PYPL',t:'stock',p:62.1,ch:-1.2,cap:'$65B',vol:'$4B',co:'#666',e:'◇',rec:'',recT:'Платёжный гигант. Низкая оценка, потенциал при восстановлении.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/paypal'}]},
+{id:'CRM',n:'Salesforce',s:'CRM',t:'stock',p:298.4,ch:0.9,cap:'$291B',vol:'$5B',co:'#555',e:'▣',rec:'safe',recT:'Лидер CRM. AI-интеграция Einstein, B2B рынок растёт.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/salesforce'}]},
+{id:'UBER',n:'Uber',s:'UBER',t:'stock',p:72.4,ch:1.1,cap:'$152B',vol:'$4B',co:'#666',e:'▽',rec:'hot',recT:'Прибыльный бизнес. Автономные авто — большой катализатор роста.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/uber'}]},
+{id:'SPOT',n:'Spotify',s:'SPOT',t:'stock',p:298.7,ch:2.1,cap:'$59B',vol:'$1B',co:'#555',e:'△',rec:'hot',recT:'Лидер музыкального стриминга. Прибыльность растёт, подкасты и аудиокниги.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/spotify'},{n:'Instagram',i:'→',u:'https://instagram.com/spotify'}]},
+{id:'COIN',n:'Coinbase',s:'COIN',t:'stock',p:224.6,ch:3.4,cap:'$56B',vol:'$3B',co:'#666',e:'◉',rec:'hot',recT:'Крупнейшая биржа США. Прямой бенефициар крипто-бума и ETF.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/coinbase'}]},
+{id:'PLTR',n:'Palantir',s:'PLTR',t:'stock',p:24.8,ch:1.9,cap:'$53B',vol:'$2B',co:'#555',e:'◈',rec:'hot',recT:'AI-аналитика для правительств. Растущие госконтракты, AI платформа.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/PalantirTech'}]},
+{id:'ARM',n:'ARM Holdings',s:'ARM',t:'stock',p:124.5,ch:2.4,cap:'$131B',vol:'$3B',co:'#666',e:'◆',rec:'hot',recT:'Архитектура чипов. Рост AI и мобильных устройств — рост ARM.',soc:[{n:'Twitter',i:'→',u:'https://twitter.com/ArmHoldingsplc'}]},
+];
+
+// ─── STATE ────────────────────────────────────────────────────
+let prices={};ALL.forEach(a=>prices[a.id]=a.p);
+let hist={};ALL.forEach(a=>{hist[a.id]=[];for(let i=0;i<30;i++)hist[a.id].push(+(a.p*(1+(Math.random()-.5)*.012)).toFixed(a.p>100?2:a.p>1?4:8))});
+let tracked=JSON.parse(localStorage.getItem('g_tr')||'[]');
+let users=JSON.parse(localStorage.getItem('g_us')||'[{"login":"test","password":"test1"}]');
+let curUser=JSON.parse(localStorage.getItem('g_cu')||'null');
+let curFilter='all';
+let mMode='login';
+let detId=null;
+let selSite=null;
+let curBuySites=[];
+
+// ─── HERO CARD ────────────────────────────────────────────────
+function renderHtc(){
+  const rows=document.getElementById('htcRows');if(!rows)return;
+  const top=ALL.slice(0,6);
+  rows.innerHTML=top.map(a=>{
+    const up=a.ch>=0;
+    return `<div class="htc-row"><span class="htc-name">${a.n}</span><span class="htc-price" id="htc-${a.id}">$${fP(a.p)}</span><span class="htc-ch ${up?'tup':'tdn'}">${up?'▲':'▼'}${Math.abs(a.ch).toFixed(2)}%</span></div>`;
+  }).join('');
+}
+renderHtc();
+
+// ─── RECOMMENDATIONS ─────────────────────────────────────────
+function buildRec(){
+  const el=document.getElementById('recTags');if(!el)return;
+  const hot=ALL.filter(a=>a.rec==='hot').slice(0,6);
+  const safe=ALL.filter(a=>a.rec==='safe').slice(0,5);
+  el.innerHTML='<span style="font-family:var(--mono);font-size:.62rem;color:#333;margin-right:.25rem">HOT:</span>'+
+    hot.map(a=>`<span class="rtag hot" onclick="openDetail('${a.id}')" title="${a.recT}">${a.s}</span>`).join('')+
+    '<span style="font-family:var(--mono);font-size:.62rem;color:#222;margin:0 .25rem">SAFE:</span>'+
+    safe.map(a=>`<span class="rtag safe" onclick="openDetail('${a.id}')" title="${a.recT}">${a.s}</span>`).join('');
+}
+buildRec();
+
+// ─── PRICES 1s ────────────────────────────────────────────────
+function upPrices(){
+  ALL.forEach(a=>{
+    const d=(Math.random()-.5)*.0022;
+    const np=+(a.p*(1+d)).toFixed(a.p>100?2:a.p>1?4:8);
+    a.p=np;prices[a.id]=np;
+    hist[a.id].push(np);if(hist[a.id].length>60)hist[a.id].shift();
+    const el=document.getElementById('htc-'+a.id);
+    if(el)el.textContent='$'+fP(np);
+  });
+  renderTbl();renderTk();renderWl();
+  if(detId)updDetail();
+  document.getElementById('updL').textContent='UPD '+new Date().toLocaleTimeString('ru');
+}
+setInterval(upPrices,1000);
+
+// ─── NOTIFICATIONS 3min ───────────────────────────────────────
+setInterval(()=>{
+  const movers=ALL.filter(a=>Math.abs(a.ch)>1.5);
+  if(!movers.length)return;
+  const a=movers[Math.floor(Math.random()*movers.length)];
+  const up=a.ch>=0;
+  showToast(`${a.s} ${up?'▲':'▼'} ${up?'+':''}${a.ch.toFixed(2)}%`,`$${fP(a.p)} · Нажмите для деталей`);
+},3*60*1000);
+
+// ─── TICKER ───────────────────────────────────────────────────
+function renderTk(){
+  const el=document.getElementById('tkEl');if(!el)return;
+  el.innerHTML=[...ALL,...ALL].map(a=>{
+    const up=a.ch>=0;
+    return `<span class="tkit"><span class="tsym">${a.s}</span><span class="tpr">$${fP(a.p)}</span><span class="tch ${up?'tup':'tdn'}">${up?'▲':'▼'}${Math.abs(a.ch).toFixed(2)}%</span></span>`;
+  }).join('');
+}
+renderTk();
+
+// ─── TABLE ────────────────────────────────────────────────────
+function sf(f,btn){curFilter=f;document.querySelectorAll('.fp').forEach(b=>b.classList.remove('on'));btn.classList.add('on');renderTbl()}
+function renderTbl(){
+  const q=(document.getElementById('sInp')?.value||'').toLowerCase();
+  const list=ALL.filter(a=>{
+    if(curFilter!=='all'&&a.t!==curFilter)return false;
+    if(q&&!a.n.toLowerCase().includes(q)&&!a.s.toLowerCase().includes(q))return false;
+    return true;
+  });
+  const tb=document.getElementById('tblBody');if(!tb)return;
+  tb.innerHTML=list.map((a,i)=>{
+    const up=a.ch>=0;
+    const isTr=tracked.includes(a.id);
+    const h=hist[a.id];
+    const mn=Math.min(...h),mx2=Math.max(...h),rng=mx2-mn||1;
+    const bars=h.slice(-8).map(v=>`<div class="sb" style="height:${Math.max(15,((v-mn)/rng)*100)}%;background:${up?'#777':'#333'}"></div>`).join('');
+    const rb=a.rec==='hot'?`<span class="rbadge rhot">HOT</span>`:a.rec==='safe'?`<span class="rbadge rsafe">SAFE</span>`:'';
+    return `<tr onclick="openDetail('${a.id}')" id="row-${a.id}">
+      <td style="font-family:var(--mono);color:#222;font-size:.68rem">${i+1}</td>
+      <td><div class="ainfo"><div class="aico" style="color:${a.co}">${a.e}</div>
+        <div><div class="an">${a.n}${rb}</div><div class="as">${a.s} · ${a.t==='crypto'?'CRYPTO':'STOCK'}</div></div>
+      </div></td>
+      <td><div class="aprx" id="price-${a.id}">$${fP(a.p)}</div></td>
+      <td><span class="chb ${up?'cup':'cdn'}">${up?'▲':'▼'}${Math.abs(a.ch).toFixed(2)}%</span></td>
+      <td class="capc">${a.cap}</td>
+      <td><div class="spark">${bars}</div></td>
+      <td onclick="event.stopPropagation()"><div class="abw">
+        <button class="btr ${isTr?'on':''}" onclick="doTrack('${a.id}',this)">${isTr?'✓':'+'}</button>
+        <button class="bbuy" onclick="startBuy('${a.id}')">Купить</button>
+        <button class="bbuy" style="background:var(--b4);color:#777;border:1px solid var(--b5)" onclick="openDetail('${a.id}')">→</button>
+      </div></td>
+    </tr>`;
+  }).join('');
+  addHoverListeners();
+}
+renderTbl();
+
+function addHoverListeners(){
+  document.querySelectorAll('.tbl tbody tr,.bbuy,.btr,button,a').forEach(el=>{
+    el.addEventListener('mouseenter',()=>document.body.classList.add('hovering'));
+    el.addEventListener('mouseleave',()=>document.body.classList.remove('hovering'));
+  });
+}
+
+// ─── DETAIL PAGE ──────────────────────────────────────────────
+function openDetail(id){
+  detId=id;const a=ALL.find(x=>x.id===id);if(!a)return;
+  sp('detail');
+  document.getElementById('dIco').style.cssText=`color:${a.co};width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:700;border:1px solid var(--b5)`;
+  document.getElementById('dIco').textContent=a.e;
+  document.getElementById('dName').textContent=a.n;
+  document.getElementById('dSym').textContent=a.s+' / '+(a.t==='crypto'?'CRYPTOCURRENCY':'STOCK');
+  updDetail();
+  document.getElementById('dGrid').innerHTML=`
+    <div class="dgc"><div class="dgl">Капитализация</div><div class="dgv">${a.cap}</div></div>
+    <div class="dgc"><div class="dgl">Объём 24ч</div><div class="dgv">${a.vol}</div></div>
+    <div class="dgc"><div class="dgl">Изм. 24ч</div><div class="dgv" style="color:${a.ch>=0?'#888':'#444'}">${a.ch>=0?'+':''}${a.ch.toFixed(2)}%</div></div>
+  `;
+  const rl=a.rec==='hot'?'// HOT · Рекомендуется к покупке':a.rec==='safe'?'// SAFE · Надёжный выбор':'// Аналитика';
+  document.getElementById('dRec').innerHTML=`<div class="rectl">${rl}</div><div class="recbody">${a.recT}</div>`;
+  document.getElementById('dSocs').innerHTML=a.soc.map(s=>`<a class="socbtn" href="${s.u}" target="_blank">${s.i} ${s.n}</a>`).join('');
+  addHoverListeners();
+}
+function updDetail(){
+  const a=ALL.find(x=>x.id===detId);if(!a)return;
+  document.getElementById('dPrice').textContent='$'+fP(a.p);
+  const up=a.ch>=0;
+  document.getElementById('dCh').innerHTML=`<span class="chb ${up?'cup':'cdn'}">${up?'▲':'▼'}${Math.abs(a.ch).toFixed(2)}%</span>`;
+  drawChart(a);
+}
+function drawChart(a){
+  const svg=document.getElementById('chSvg');if(!svg)return;
+  const h=hist[a.id];if(h.length<2)return;
+  const W=800,H=150,p=6;
+  const mn=Math.min(...h),mx=Math.max(...h),rng=mx-mn||1;
+  const pts=h.map((v,i)=>`${p+(i/(h.length-1))*(W-2*p)},${H-p-((v-mn)/rng)*(H-2*p)}`);
+  const col=a.ch>=0?'#777':'#333';
+  const ap=`M${pts[0]} ${pts.slice(1).map(x=>`L${x}`).join(' ')} L${W-p},${H-p} L${p},${H-p} Z`;
+  svg.innerHTML=`<defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1">
+    <stop offset="0%" stop-color="${col}" stop-opacity=".2"/>
+    <stop offset="100%" stop-color="${col}" stop-opacity="0"/>
+  </linearGradient></defs>
+  <path d="${ap}" fill="url(#lg)"/>
+  <polyline points="${pts.join(' ')}" fill="none" stroke="${col}" stroke-width="1.8" stroke-linejoin="round"/>`;
+}
+
+// ─── BUY FLOW ─────────────────────────────────────────────────
+function startBuy(id){
+  if(!curUser){om('login');showToast('Требуется вход','Войдите чтобы купить');return}
+  if(!detId||detId!==id) detId=id;
+  openBuyModal();
+}
+function openBuyModal(){
+  if(!curUser){om('login');showToast('Требуется вход','Войдите чтобы купить');return}
+  const a=ALL.find(x=>x.id===detId);if(!a)return;
+  selSite=null;
+  curBuySites=a.t==='crypto'?CRYPTO_SITES:STOCK_SITES;
+  document.getElementById('buyModalTitle').textContent='// Выберите платформу для '+a.s;
+  document.getElementById('buyModalSub').textContent='Топ-10 проверенных '+(a.t==='crypto'?'криптобирж':'брокеров');
+  document.getElementById('buyHint').textContent='Выберите платформу выше';
+  document.getElementById('buyContinueBtn').classList.remove('active');
+  document.getElementById('buySitesList').innerHTML=curBuySites.map((s,i)=>`
+    <div class="bsite" onclick="selectSite(${i})" id="bsite-${i}">
+      <div class="bsite-ico">${s.i}</div>
+      <div>
+        <div class="bsite-name">${s.n}</div>
+        <div class="bsite-desc">${s.d}</div>
+      </div>
+      <div class="bsite-check">✓</div>
+    </div>`).join('');
+  document.getElementById('buyOverlay').classList.add('open');
+  addHoverListeners();
+}
+function selectSite(i){
+  selSite=i;
+  document.querySelectorAll('.bsite').forEach((el,j)=>{el.classList.toggle('selected',j===i)});
+  const s=curBuySites[i];
+  document.getElementById('buyHint').textContent='Выбрано: '+s.n;
+  document.getElementById('buyContinueBtn').classList.add('active');
+}
+function doContinue(){
+  if(selSite===null)return;
+  const s=curBuySites[selSite];
+  closeBuyModal();
+  showToast('Переходим на '+s.n,'Открываем платформу...');
+  setTimeout(()=>window.open(s.u,'_blank'),400);
+}
+function closeBuyModal(){document.getElementById('buyOverlay').classList.remove('open');selSite=null}
+document.getElementById('buyOverlay').addEventListener('click',e=>{if(e.target.id==='buyOverlay')closeBuyModal()});
+
+// ─── TRACK ────────────────────────────────────────────────────
+function doTrack(id,btn){
+  if(!curUser){om('login');showToast('Требуется вход','Войдите чтобы отслеживать');return}
+  const i=tracked.indexOf(id);
+  if(i>=0){tracked.splice(i,1);btn.textContent='+';btn.classList.remove('on');showToast('Убрано',ALL.find(a=>a.id===id).n);}
+  else{tracked.push(id);btn.textContent='✓';btn.classList.add('on');showToast('Добавлено ⭐',ALL.find(a=>a.id===id).n);}
+  localStorage.setItem('g_tr',JSON.stringify(tracked));
+  renderWl();
+}
+
+// ─── WATCHLIST ────────────────────────────────────────────────
+function renderWl(){
+  const g=document.getElementById('wlGrid');if(!g)return;
+  if(!tracked.length){g.innerHTML='<div class="empty-wl"><span class="empty-ico">□</span><div style="font-family:var(--mono);font-size:.72rem;letter-spacing:.08em;text-transform:uppercase">Портфель пуст</div><div style="font-size:.8rem;margin-top:.4rem;color:#222">Нажмите + Следить на любом активе</div></div>';return}
+  g.innerHTML=tracked.map(id=>{
+    const a=ALL.find(x=>x.id===id);if(!a)return'';
+    const up=a.ch>=0;
+    return `<div class="wlc">
+      <div class="wltp">
+        <div style="display:flex;gap:.5rem;align-items:center;font-family:var(--mono);font-size:.72rem;font-weight:700">${a.e} ${a.s}</div>
+        <span class="chb ${up?'cup':'cdn'}" style="font-size:.65rem">${up?'▲':'▼'}${Math.abs(a.ch).toFixed(2)}%</span>
+      </div>
+      <div class="wlpr">$${fP(a.p)}</div>
+      <div class="wlsym">${a.n}</div>
+      <div class="wlbts">
+        <button class="btr" onclick="rmTr('${a.id}')">Убрать</button>
+        <button class="bbuy" onclick="detId='${a.id}';openBuyModal()">Купить</button>
+      </div>
+    </div>`;
+  }).join('');
+  addHoverListeners();
+}
+function rmTr(id){tracked=tracked.filter(x=>x!==id);localStorage.setItem('g_tr',JSON.stringify(tracked));renderTbl();renderWl();}
+
+// ─── CONVERTER ────────────────────────────────────────────────
+const CURR=[
+  {s:'USD',n:'Доллар США',r:1},{s:'EUR',n:'Евро',r:0.92},{s:'RUB',n:'Рубль',r:89.5},
+  {s:'AZN',n:'Азерб. манат',r:1.7},{s:'TRY',n:'Тур. лира',r:32.1},{s:'GBP',n:'Фунт',r:0.79},
+  {s:'JPY',n:'Иена',r:157.2},{s:'CNY',n:'Юань',r:7.25},{s:'KZT',n:'Тенге',r:447},
+  {s:'UAH',n:'Гривна',r:39.4},{s:'AED',n:'Дирхам ОАЭ',r:3.67},{s:'SAR',n:'Риял',r:3.75},
+  {s:'INR',n:'Рупия',r:83.4},{s:'BRL',n:'Реал',r:5.12},{s:'CAD',n:'Канад. доллар',r:1.36},
+  {s:'CHF',n:'Франк',r:0.89},{s:'SEK',n:'Крона',r:10.6},
+  {s:'BTC',n:'Bitcoin',r:1/67420},{s:'ETH',n:'Ethereum',r:1/3512},
+  {s:'TON',n:'Toncoin',r:1/7.14},{s:'SOL',n:'Solana',r:1/178},{s:'BNB',n:'BNB',r:1/598},
+];
+let cI=false;
+function initConv(){
+  if(cI)return;cI=true;
+  const f=document.getElementById('cFrom'),t=document.getElementById('cTo');
+  CURR.forEach(c=>{f.add(new Option(`${c.s} — ${c.n}`,c.s));t.add(new Option(`${c.s} — ${c.n}`,c.s))});
+  t.value='RUB';doConv();
+}
+function doConv(){
+  const amt=parseFloat(document.getElementById('cAmt')?.value)||0;
+  const fs=document.getElementById('cFrom')?.value,ts=document.getElementById('cTo')?.value;
+  const fc=CURR.find(c=>c.s===fs),tc=CURR.find(c=>c.s===ts);
+  if(!fc||!tc)return;
+  const res=(amt/fc.r)*tc.r;
+  document.getElementById('cResN').textContent=res.toLocaleString('ru',{maximumFractionDigits:8});
+  document.getElementById('cResL').textContent=`${amt} ${fs} = ${res.toLocaleString('ru',{maximumFractionDigits:8})} ${ts}`;
+}
+
+// ─── AUTH ─────────────────────────────────────────────────────
+function om(mode){mMode=mode;document.getElementById('authMod').classList.add('open');renderMod()}
+function cm(){document.getElementById('authMod').classList.remove('open')}
+document.getElementById('authMod').addEventListener('click',e=>{if(e.target.id==='authMod')cm()});
+function renderMod(){
+  document.getElementById('mErr').style.display='none';
+  const isL=mMode==='login';
+  document.getElementById('mTit').textContent=isL?'ВХОД':'РЕГИСТРАЦИЯ';
+  document.getElementById('mSub').textContent=isL?'Войдите в аккаунт':'Создайте аккаунт';
+  document.querySelector('#authMod .mbtn').textContent=isL?'Войти':'Создать аккаунт';
+  document.getElementById('mFlds').innerHTML=`
+    <div class="mlbl">Логин</div><input class="minp" id="mL" placeholder="${isL?'Логин':'Придумайте логин'}">
+    <div class="mlbl">Пароль</div><input class="minp" id="mP" type="password" placeholder="Пароль">`;
+  document.getElementById('mSw').innerHTML=isL
+    ?'Нет аккаунта? <a onclick="om(\'register\')">Зарегистрироваться</a>'
+    :'Есть аккаунт? <a onclick="om(\'login\')">Войти</a>';
+  addHoverListeners();
+}
+function authDo(){
+  const l=document.getElementById('mL')?.value.trim(),p=document.getElementById('mP')?.value;
+  const err=document.getElementById('mErr');err.style.display='none';
+  if(!l||!p){err.textContent='Заполните все поля';err.style.display='block';return}
+  if(mMode==='login'){
+    const u=users.find(u=>u.login===l&&u.password===p);
+    if(!u){err.textContent='Неверный логин или пароль';err.style.display='block';return}
+    curUser={login:l};localStorage.setItem('g_cu',JSON.stringify(curUser));
+    updAuth();cm();showToast('Добро пожаловать',l);
+  } else {
+    if(users.find(u=>u.login===l)){err.textContent='Логин занят';err.style.display='block';return}
+    if(p.length<3){err.textContent='Пароль мин. 3 символа';err.style.display='block';return}
+    users.push({login:l,password:p});localStorage.setItem('g_us',JSON.stringify(users));
+    curUser={login:l};localStorage.setItem('g_cu',JSON.stringify(curUser));
+    updAuth();cm();showToast('Аккаунт создан',l);
+  }
+}
+function logout(){curUser=null;localStorage.removeItem('g_cu');updAuth();showToast('Вышли','До встречи!')}
+function updAuth(){
+  const a=document.getElementById('authArea');
+  if(curUser){
+    const ini=curUser.login.slice(0,2).toUpperCase();
+    a.innerHTML=`<div class="uchip" onclick="logout()"><div class="uav">${ini}</div><span style="font-family:var(--mono);font-size:.75rem">${curUser.login}</span><span style="color:#333;font-size:.68rem">× выйти</span></div>`;
+  } else {
+    a.innerHTML=`<button class="btn-login" onclick="om('login')">Войти</button>`;
+  }
+  addHoverListeners();
+}
+updAuth();
+
+// ─── TOAST ────────────────────────────────────────────────────
+function showToast(title,body){
+  const w=document.getElementById('toastW');
+  const el=document.createElement('div');el.className='titem';
+  el.innerHTML=`<button class="tclose2" onclick="this.parentElement.remove()">×</button><div class="ttit">${title}</div><div class="tbody2">${body}</div>`;
+  w.appendChild(el);setTimeout(()=>el.remove(),5000);
+}
+
+// ─── PAGE NAV ─────────────────────────────────────────────────
+function sp(pg,btn){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.getElementById('pg-'+pg)?.classList.add('on');
+  document.querySelectorAll('.nb').forEach(b=>b.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  if(pg==='watch')renderWl();
+  if(pg==='conv')initConv();
+  if(pg!=='detail')detId=null;
+  window.scrollTo(0,0);
+  addHoverListeners();
+}
+
+// ─── FORMAT ───────────────────────────────────────────────────
+function fP(p){
+  if(p>=1000)return p.toLocaleString('en',{maximumFractionDigits:2});
+  if(p>=1)return p.toFixed(2);
+  if(p>=.001)return p.toFixed(4);
+  return p.toFixed(8);
+}
+
+document.getElementById('updL').textContent='UPD '+new Date().toLocaleTimeString('ru');
+addHoverListeners();
+</script>
+</body>
+</html>
